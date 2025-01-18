@@ -69,15 +69,18 @@ const RegistrationScreen = ({ onHasAccount }) => {
   };
 
   const handlePasswordChange = (value) => {
-    setPassword(value);
+    if(value.length < 20) {
+      setPassword(value);
+    }
   };
 
   const showPassword = () => {
     setIsPasswordVisible(prev => !prev)
   };
 
-  const onLogin = async () => {
-    console.log('login')
+  const onRegister = async () => {
+    console.log('register');
+    console.log(login, email, password, photo);
   };
 
   const onSignUp = () => {
@@ -159,7 +162,7 @@ const RegistrationScreen = ({ onHasAccount }) => {
             </View>
 
             <View style={[styles.innerContainer, styles.buttonContainer]}>
-              <Button onPress={onLogin}>
+              <Button onPress={onRegister}>
                 <Text style={[styles.baseText, styles.loginButtonText]}>
                   Зареєструватися
                 </Text>

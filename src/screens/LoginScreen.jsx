@@ -30,7 +30,9 @@ const LoginScreen = ({ onRegister }) => {
   };
 
   const handlePasswordChange = (value) => {
-    setPassword(value);
+    if(value.length < 20) {
+      setPassword(value);
+    }
   };
 
   const showPassword = () => {
@@ -39,6 +41,7 @@ const LoginScreen = ({ onRegister }) => {
 
   const onLogin = async () => {
     console.log('login')
+    console.log(email, password);
   };
 
   const onSignUp = () => {
