@@ -20,7 +20,7 @@ import Button from "../components/Button";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 
-const LoginScreen = () => {
+const LoginScreen = ({ onRegister }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(true);
@@ -42,7 +42,7 @@ const LoginScreen = () => {
   };
 
   const onSignUp = () => {
-    console.log('signUp')
+    onRegister();
   };
   
   const showButton = (

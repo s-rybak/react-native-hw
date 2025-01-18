@@ -23,7 +23,7 @@ import CircleCrossSvg from "../../icons/CircleCrossSvg";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 
-const RegistrationScreen = () => {
+const RegistrationScreen = ({ onHasAccount }) => {
   const [photo, setPhoto] = useState('');
   const [login, setLogin] = useState('');
   const [email, setEmail] = useState('');
@@ -81,7 +81,7 @@ const RegistrationScreen = () => {
   };
 
   const onSignUp = () => {
-    console.log('signUp')
+    onHasAccount();
   };
   
   const showButton = (
