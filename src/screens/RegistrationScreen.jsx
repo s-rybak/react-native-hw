@@ -81,7 +81,7 @@ const RegistrationScreen = ({ onHasAccount }) => {
   };
 
   const onSignUp = () => {
-    onHasAccount();
+    onHasAccount(); // temporary page change fix for preview
   };
   
   const showButton = (

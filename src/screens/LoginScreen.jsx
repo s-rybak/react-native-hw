@@ -42,7 +42,7 @@ const LoginScreen = ({ onRegister }) => {
   };
 
   const onSignUp = () => {
-    onRegister();
+    onRegister(); // temporary page change fix for preview
   };
   
   const showButton = (
