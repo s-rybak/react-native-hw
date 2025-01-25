@@ -20,7 +20,7 @@ import Button from "../components/Button";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 
-const LoginScreen = ({ onRegister }) => {
+const LoginScreen = ({navigation  }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(true);
@@ -42,10 +42,11 @@ const LoginScreen = ({ onRegister }) => {
   const onLogin = async () => {
     console.log('login')
     console.log(email, password);
+    navigation.navigate('Home');
   };
 
   const onSignUp = () => {
-    onRegister(); // temporary page change fix for preview
+    navigation.navigate('Registration');
   };
   
   const showButton = (

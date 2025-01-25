@@ -11,6 +11,7 @@ const Input = ({
   autofocus = false,
   secureTextEntry = false,
   onBlur: onBlurCustom,
+  multiline = false,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -23,7 +24,7 @@ const Input = ({
 
     if (onBlurCustom) {
       onBlurCustom();
-    };
+    }
   };
 
   return (
@@ -38,11 +39,12 @@ const Input = ({
         autoCapitalize="none"
         onFocus={onFocus}
         onBlur={onBlur}
+        multiline={multiline}
       />
 
       {rightButton}
     </View>
-  )
+  );
 };
 
 const styles = StyleSheet.create({
@@ -63,7 +65,7 @@ const styles = StyleSheet.create({
   focused: {
     backgroundColor: colors.white,
     borderColor: colors.orange,
-  }
-})
+  },
+});
 
 export default Input;

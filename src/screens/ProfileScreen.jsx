@@ -3,32 +3,25 @@ import {
   View,
   Text,
   Image,
-  Platform,
   Keyboard,
   Pressable,
   Dimensions,
   StyleSheet,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  TouchableWithoutFeedback,
+  FlatList,
+  SafeAreaView,
 } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
 
 import { colors } from "../../styles/global";
-
-import Input from "../components/Input";
-import Button from "../components/Button";
 import CirclePlusSvg from "../../icons/CirclePlusSvg";
 import CircleCrossSvg from "../../icons/CircleCrossSvg";
-
+import Post from "../components/Post";
+import LogoutButton from "../components/LogoutButton";
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 
 const RegistrationScreen = ({  navigation }) => {
   const [photo, setPhoto] = useState('');
-  const [login, setLogin] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isPasswordVisible, setIsPasswordVisible] = useState(true);
+ 
 
   const handlePhotoUpload = async () => {
     try {
@@ -60,49 +53,33 @@ const RegistrationScreen = ({  navigation }) => {
     setPhoto("");
   };
 
-  const handleLoginChange = (value) => {
-    setLogin(value);
-  };
+  const testPosts = [
+    {
+      image: require('../../assets/default-avatar.jpg'),
+      title: "Ліс",
+      location: "Ivano-Frankivs'k Region, Ukraine",
+    },
+    {
+      image: require('../../assets/default-avatar.jpg'),
+      title: "Ліс",
+      location: "Ivano-Frankivs'k Region, Ukraine",
+    },
+    {
+      image: require('../../assets/default-avatar.jpg'),
+      title: "Ліс",
+      location: "Ivano-Frankivs'k Region, Ukraine",
+    },
+    {
+      image: require('../../assets/default-avatar.jpg'),
+      title: "Ліс",
+      location: "Ivano-Frankivs'k Region, Ukraine",
+    },
+  ]
 
-  const handleEmailChange = (value) => {
-    setEmail(value);
-  };
 
-  const handlePasswordChange = (value) => {
-    if(value.length < 20) {
-      setPassword(value);
-    }
-  };
-
-  const showPassword = () => {
-    setIsPasswordVisible(prev => !prev)
-  };
-
-  const onRegister = async () => {
-    console.log('register');
-    console.log(login, email, password, photo);
-    navigation.navigate('Home');
-  };
-
-  const onSignUp = () => {
-    navigation.navigate('Login');
-  };
-  
-  const showButton = (
-    <TouchableOpacity
-      onPress={showPassword}
-    >
-      <Text style={[styles.baseText, styles.passwordButtonText]}>
-        Показати
-      </Text>
-    </TouchableOpacity>
-  );
 
   return (
-    <Pressable
-      style={{ flex: 1 }}
-      onPress={() => Keyboard.dismiss()}
-    >
+
       <>
         <Image
           source={require("../../assets/background.png")}
@@ -110,11 +87,15 @@ const RegistrationScreen = ({  navigation }) => {
           style={styles.image}
         />
 
-        <KeyboardAvoidingView
+        <View
           style={styles.container}
-          behavior={Platform.OS == "ios" ? 'padding' : 'height'}
         >
           <View style={styles.formContainer}>
+
+          <LogoutButton
+              style={styles.logoutButton}
+              onPress={() => navigation.navigate('Login')}
+            />
 
             <View style={styles.photoContainer}>
 
@@ -135,53 +116,20 @@ const RegistrationScreen = ({  navigation }) => {
 
             </View>
 
-            <Text style={styles.title}>Реєстрація</Text>
+            <Text style={styles.title}>Natali Romanova</Text>
 
-            <View style={[styles.innerContainer, styles.inputContainer]}>
-              <Input
-                value={login}
-                autofocus={true}
-                placeholder="Логін"
-                onTextChange={handleLoginChange}
-              />
+            {/* Posts */}
+            <FlatList
+                style={styles.postsContainer}
+                data={testPosts}
+                renderItem={({ item }) => (
+                    <Post image={item.image} title={item.title} location={item.location} />
+                )}
+                />
 
-              <Input
-                value={email}
-                autofocus={true}
-                placeholder="Адреса електронної пошти"
-                onTextChange={handleEmailChange}
-              />
-
-              <Input
-                value={password}
-                placeholder="Пароль"
-                rightButton={showButton}
-                outerStyles={styles.passwordButton}
-                onTextChange={handlePasswordChange}
-                secureTextEntry={isPasswordVisible}
-              />
-            </View>
-
-            <View style={[styles.innerContainer, styles.buttonContainer]}>
-              <Button onPress={onRegister}>
-                <Text style={[styles.baseText, styles.loginButtonText]}>
-                  Зареєструватися
-                </Text>
-              </Button>
-
-              <View style={styles.signUpContainer}>
-                <Text style={[styles.baseText, styles.passwordButtonText]}>
-                  Вже є акаунт ?{' '}
-                  <TouchableWithoutFeedback style={styles.signUpTextHolder} onPress={onSignUp}>
-                    <Text style={styles.signUpText}>Увійти</Text>
-                  </TouchableWithoutFeedback>
-                </Text>
-              </View>
-            </View>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </>
-    </Pressable>
   );
 };
 
@@ -273,5 +221,15 @@ const styles = StyleSheet.create({
     height: 120,
     width: 120,
     borderRadius: 16,
-  }
+  },
+  postsContainer: {
+    paddingTop: 32,
+    paddingBottom: 16,
+  },
+  logoutButton: {
+    position: "absolute",
+    right: 16,
+    top: 22,
+
+  },
 });

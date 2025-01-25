@@ -2,10 +2,10 @@ import { TouchableOpacity, StyleSheet } from "react-native";
 import { colors } from "../../styles/global";
 
 
-const Button = ({ children, onPress, buttonStyle }) => {
+const Button = ({ children, onPress, buttonStyle, isDisabled }) => {
     return (
       <TouchableOpacity
-        style={[style.button, buttonStyle]}
+        style={[style.button, isDisabled ? style.buttonUnactive : null, buttonStyle]}
         onPress={onPress}
       >
         {children}
@@ -22,4 +22,8 @@ const Button = ({ children, onPress, buttonStyle }) => {
       paddingVertical: 16,
       paddingHorizontal: 32,
     },
+    buttonUnactive: {
+      backgroundColor: colors.light_gray,
+      color: colors.text_gray,
+    }
   })
