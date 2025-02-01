@@ -12,10 +12,12 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import userReducer from "./user/userSlice";
+import postReducer from "./post/postSlice";
 
 const userConfig = {
   key: "user",
   storage: AsyncStorage,
+  whitelist: ["user"],
 };
 
 /**
@@ -24,6 +26,7 @@ const userConfig = {
 const store = configureStore({
   reducer: {
     user: persistReducer(userConfig, userReducer),
+    post: postReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

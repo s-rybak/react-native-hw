@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { registerUser, loginUser, logoutUser } from "./userOparations";
+import { registerUser, loginUser, logoutUser } from "./userOperations";
 
 const userSlice = createSlice({
   name: "user",
@@ -31,14 +31,14 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addMatcher(
-        (a) => a.type.endsWith("pending"),
+        (a) => a.type.startsWith("user/") && a.type.endsWith("pending"),
         (state) => {
           state.isLoading = true;
           state.error = null;
         }
       )
       .addMatcher(
-        (a) => a.type.endsWith("rejected"),
+        (a) => a.type.startsWith("user/") && a.type.endsWith("rejected"),
         (state, { payload }) => {
           state.error = payload;
           state.isLoading = false;

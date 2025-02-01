@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { selectIsLoading, selectError } from "../redux/user/userSelectors";
-import { loginUser } from "../redux/user/userOparations";
+import { loginUser } from "../redux/user/userOperations";
 import { resetError } from "../redux/user/userSlice";
 
 import { colors } from "../../styles/global";
@@ -33,6 +33,8 @@ const LoginScreen = ({ navigation }) => {
 
   const isLoading = useSelector(selectIsLoading);
   const error = useSelector(selectError);
+
+  console.log(isLoading);
 
   useEffect(() => {
     dispatch(resetError());

@@ -1,4 +1,13 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  collection,
+  query,
+  where,
+  limit,
+} from "firebase/firestore";
 import { db, storage } from "../../config";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
@@ -12,12 +21,16 @@ export const addUser = async (userId, userData) => {
   }
 };
 
-export const addPost = async (userId, post) => {
+export const addPost = async (post) => {
   try {
-    await setDoc(doc(db, "posts", userId), post, { merge: true });
-    console.log("Post added:", userId);
+    await setDoc(doc(db, "posts", post.id), post, {
+      merge: true,
+    });
+    console.log("Post added:", post);
+    return post;
   } catch (error) {
     console.error("Error adding post:", error);
+    throw error;
   }
 };
 
@@ -35,13 +48,17 @@ export const getUser = async (userId) => {
   }
 };
 
-export const getPosts = async (id) => {
-  const docRef = doc(db, "posts", id);
-  const docSnap = await getDoc(docRef);
+export const getPosts = async (uid) => {
+  const docRef = collection(db, "posts");
+  const q = query(docRef, where("userId", "==", uid), limit(10));
+  const docSnap = await getDocs(q);
 
-  if (docSnap.exists()) {
-    console.log("Post data:", docSnap.data());
-    return docSnap.data();
+  if (docSnap.size > 0) {
+    const posts = [];
+    docSnap.forEach((doc) => {
+      posts.push(doc.data());
+    });
+    return posts;
   } else {
     console.log("No such document!");
     return null;
@@ -59,13 +76,16 @@ export const updateUserInFirestore = async (uid, data) => {
 };
 
 // Функція для завантаження зображення
-export const uploadImage = async (userId, file, fileName) => {
+export const uploadImage = async (
+  userId,
+  file,
+  fileName,
+  dbPrefix = "postPhotos"
+) => {
   try {
-    const imageRef = ref(storage, `postPhotos/${userId}/${fileName}`);
+    const imageRef = ref(storage, `${dbPrefix}/${userId}/${fileName}`);
     const result = await uploadBytes(imageRef, file);
-    const imageUrl = await getImageUrl(imageRef);
-    console.log("Upload result:", result);
-    return imageUrl;
+    return await getImageUrl(result.ref);
   } catch (error) {
     console.error("Error uploading image:", error);
     throw error;

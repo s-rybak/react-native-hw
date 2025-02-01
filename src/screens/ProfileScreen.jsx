@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,20 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { logoutUser } from "../redux/user/userOparations";
+import { logoutUser } from "../redux/user/userOperations";
 import {
   selectUser,
   selectIsLoading,
   selectError,
 } from "../redux/user/userSelectors";
+import {
+  selectPosts,
+  selectPostsLoading,
+  selectPostsError,
+  selectLastCreatedPost,
+} from "../redux/post/postSelectors";
+import { loadPosts } from "../redux/post/postOperations";
+
 import * as ImagePicker from "expo-image-picker";
 
 import { colors } from "../../styles/global";
@@ -28,9 +36,20 @@ const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 const RegistrationScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const [photo, setPhoto] = useState("");
+  const { posts } = useSelector(selectPosts);
   const { user } = useSelector(selectUser);
   const isLoading = useSelector(selectIsLoading);
   const error = useSelector(selectError);
+
+  const lastPost = useSelector(selectLastCreatedPost);
+  const isPostsLoading = useSelector(selectPostsLoading);
+  const postsLoadingError = useSelector(selectPostsError);
+
+  useEffect(() => {
+    if (user?.uid) {
+      dispatch(loadPosts(user.uid));
+    }
+  }, [lastPost, user]);
 
   const handleLogout = () => {
     dispatch(logoutUser());
@@ -65,29 +84,6 @@ const RegistrationScreen = ({ navigation }) => {
   const handlePhotoRemove = () => {
     setPhoto("");
   };
-
-  const testPosts = [
-    {
-      image: require("../../assets/default-avatar.jpg"),
-      title: "Ліс",
-      location: "Ivano-Frankivs'k Region, Ukraine",
-    },
-    {
-      image: require("../../assets/default-avatar.jpg"),
-      title: "Ліс",
-      location: "Ivano-Frankivs'k Region, Ukraine",
-    },
-    {
-      image: require("../../assets/default-avatar.jpg"),
-      title: "Ліс",
-      location: "Ivano-Frankivs'k Region, Ukraine",
-    },
-    {
-      image: require("../../assets/default-avatar.jpg"),
-      title: "Ліс",
-      location: "Ivano-Frankivs'k Region, Ukraine",
-    },
-  ];
 
   return (
     <>
@@ -128,17 +124,28 @@ const RegistrationScreen = ({ navigation }) => {
           <Text style={styles.title}>{user?.displayName}</Text>
 
           {/* Posts */}
-          <FlatList
-            style={styles.postsContainer}
-            data={testPosts}
-            renderItem={({ item }) => (
-              <Post
-                image={item.image}
-                title={item.title}
-                location={item.location}
-              />
-            )}
-          />
+          {isPostsLoading ? (
+            <ActivityIndicator size="large" color={colors.blue} />
+          ) : (
+            <FlatList
+              style={styles.postsContainer}
+              data={posts}
+              renderItem={({ item }) => (
+                <Post
+                  key={item.id}
+                  image={{ uri: item.image }}
+                  title={item.title}
+                  location={item.address}
+                  onLocationPress={() =>
+                    navigation.navigate("MapScreen", { post: item })
+                  }
+                  onCommentsPress={() =>
+                    navigation.navigate("CommentsScreen", { post: item })
+                  }
+                />
+              )}
+            />
+          )}
         </View>
       </View>
     </>

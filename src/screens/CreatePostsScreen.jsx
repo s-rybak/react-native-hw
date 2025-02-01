@@ -1,13 +1,26 @@
 import { FC, useEffect, useState, useRef } from "react";
-import { Image, KeyboardAvoidingView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useDispatch, useSelector } from "react-redux";
+import {
+  Image,
+  KeyboardAvoidingView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+} from "react-native";
+import { createPost } from "../redux/post/postOperations";
+import { selectPostCreate } from "../redux/post/postSelectors";
+import { selectUser } from "../redux/user/userSelectors";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import TrashCan from "../../icons/TrashCan";
 import CameraIcon from "../../icons/Camera";
 import "react-native-get-random-values";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
-import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import MapMarkerGray from "../../icons/MapMarkerGray";
+import { uploadImage } from "../services/firebaseStore";
 
 import { colors } from "../../styles/global";
 
@@ -17,14 +30,23 @@ import Input from "../components/Input";
 const PLACES_KEY = "AIzaSyAhxqfyeRiiSj3Os9KyN3TcVFCxk6hQqh0";
 
 const CreatePostScreen = ({ navigation, route }) => {
-  const [facing] = useState('back');
+  const dispatch = useDispatch();
+  const [facing] = useState("back");
+  const { user } = useSelector(selectUser);
   const [permission, requestPermission] = useCameraPermissions();
   const [selectedImage, setSelectedImage] = useState(null);
-  const [title, setTitle] = useState('');
-  const [address, setAddress] = useState('');
+  const [title, setTitle] = useState("");
+  const [address, setAddress] = useState("");
   const cameraView = useRef(null);
   const placesRef = useRef(null);
   const [location, setLocation] = useState(null);
+  const { lastPost, isLoading, error } = useSelector(selectPostCreate);
+
+  useEffect(() => {
+    if (lastPost) {
+      navigation.navigate("PostsScreen");
+    }
+  }, [lastPost]);
 
   if (!permission) {
     return <View style={styles.section} />;
@@ -33,7 +55,9 @@ const CreatePostScreen = ({ navigation, route }) => {
   if (!permission.granted) {
     return (
       <View style={styles.section}>
-        <Text style={styles.message}>Нам потрібен дозвіл на використання камери</Text>
+        <Text style={styles.message}>
+          Нам потрібен дозвіл на використання камери
+        </Text>
         <TouchableOpacity onPress={requestPermission}>
           <Text>Надати дозвіл</Text>
         </TouchableOpacity>
@@ -47,16 +71,17 @@ const CreatePostScreen = ({ navigation, route }) => {
       const photo = await cameraView.current.takePictureAsync();
       setSelectedImage(photo.uri);
     } catch (error) {
-      console.log('Error taking picture:', error);
+      console.log("Error taking picture:", error);
     }
   };
 
   const pickImage = async () => {
     try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
       if (!permissionResult.granted) {
-        alert('Необхідний дозвіл на доступ до галереї');
+        alert("Необхідний дозвіл на доступ до галереї");
         return;
       }
 
@@ -71,23 +96,42 @@ const CreatePostScreen = ({ navigation, route }) => {
         setSelectedImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.log('Error picking image:', error);
+      console.log("Error picking image:", error);
     }
   };
 
   const onClearData = () => {
     setSelectedImage(null);
-    setTitle('');
-    setAddress('');
+    setTitle("");
+    setAddress("");
     placesRef.current?.clear();
-  }
+  };
+
+  const uploadImageToStorage = async () => {
+    if (!selectedImage) return;
+
+    try {
+      const response = await fetch(selectedImage);
+      const file = await response.blob();
+      const fileName = selectedImage.split("/").pop(); // Отримуємо ім'я файлу з URI
+      const fileType = file.type; // Отримуємо тип файлу
+      const imageFile = new File([file], fileName, { type: fileType });
+
+      const uploadedImageUrl = await uploadImage(user.uid, imageFile, fileName);
+
+      return uploadedImageUrl;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  };
 
   const onPublish = async () => {
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
-      
-      if (status !== 'granted') {
-        alert('Необхідний дозвіл на визначення місцезнаходження');
+
+      if (status !== "granted") {
+        alert("Необхідний дозвіл на визначення місцезнаходження");
         return;
       }
 
@@ -95,26 +139,24 @@ const CreatePostScreen = ({ navigation, route }) => {
       setLocation(currentLocation.coords);
 
       const post = {
-        image: selectedImage,
+        id: user.uid + Date.now().toString(32),
+        userId: user.uid,
+        image: await uploadImageToStorage(selectedImage),
         title,
         address,
         location: {
           latitude: currentLocation.coords.latitude,
           longitude: currentLocation.coords.longitude,
-        }
+        },
       };
 
-      console.log('Post with location:', post);
-      
+      console.log("post:", post);
       onClearData();
-      
-      navigation.navigate('PostsScreen', {
-        post: post,
-      });
-      
+
+      dispatch(createPost(post));
     } catch (error) {
-      console.log('Error publishing post:', error);
-      alert('Помилка при публікації поста');
+      console.log("Error publishing post:", error);
+      alert("Помилка при публікації поста");
     }
   };
 
@@ -125,11 +167,7 @@ const CreatePostScreen = ({ navigation, route }) => {
       <View style={styles.imageContainer}>
         <View style={styles.emptyImgContainer}>
           {!selectedImage ? (
-            <CameraView 
-              style={styles.camera}
-              facing={facing}
-              ref={cameraView}
-            >
+            <CameraView style={styles.camera} facing={facing} ref={cameraView}>
               <View style={styles.cameraContent}>
                 <TouchableOpacity
                   style={styles.cameraIconWrapper}
@@ -141,10 +179,7 @@ const CreatePostScreen = ({ navigation, route }) => {
             </CameraView>
           ) : (
             <>
-              <Image
-                source={{ uri: selectedImage }}
-                style={styles.image}
-              />
+              <Image source={{ uri: selectedImage }} style={styles.image} />
               <TouchableOpacity
                 style={styles.cameraIconWrapper}
                 onPress={() => setSelectedImage(null)}
@@ -157,11 +192,11 @@ const CreatePostScreen = ({ navigation, route }) => {
 
         <TouchableOpacity onPress={pickImage}>
           <Text style={[styles.btnText, styles.grayText]}>
-            {selectedImage ? 'Змінити фото' : 'Завантажте фото'}
+            {selectedImage ? "Змінити фото" : "Завантажте фото"}
           </Text>
         </TouchableOpacity>
       </View>
-      
+
       <View style={{ flex: 1 }}>
         <KeyboardAvoidingView style={{ flex: 1 }}>
           <Input
@@ -172,7 +207,7 @@ const CreatePostScreen = ({ navigation, route }) => {
           />
 
           <View style={styles.locationInputContainer}>
-            <MapMarkerGray width={24} height={24} style={styles.mapMarker}/>
+            <MapMarkerGray width={24} height={24} style={styles.mapMarker} />
             <GooglePlacesAutocomplete
               ref={placesRef}
               placeholder="Місцевість..."
@@ -188,7 +223,7 @@ const CreatePostScreen = ({ navigation, route }) => {
                   flex: 1,
                 },
                 textInputContainer: {
-                  flexDirection: 'row',
+                  flexDirection: "row",
                   paddingHorizontal: 0,
                 },
                 textInput: {
@@ -197,44 +232,53 @@ const CreatePostScreen = ({ navigation, route }) => {
                   fontSize: 15,
                   flex: 1,
                   borderBottomWidth: 1,
-                  borderColor: colors.border_gray
+                  borderColor: colors.border_gray,
                 },
                 row: {
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: "#FFFFFF",
                   padding: 13,
                   height: 44,
-                  flexDirection: 'row',
+                  flexDirection: "row",
                 },
                 predefinedPlacesDescription: {
-                  color: '#1faadb',
+                  color: "#1faadb",
                 },
                 listView: {
                   maxHeight: 160,
-                }
+                },
               }}
             />
           </View>
         </KeyboardAvoidingView>
 
-        <Button onPress={onPublish} isDisabled={isDisabled}>
-            <Text style={{
+        {isLoading ? (
+          <ActivityIndicator size="large" />
+        ) : (
+          <Button onPress={onPublish} isDisabled={isDisabled}>
+            <Text
+              style={{
                 ...styles.btnText,
-                ...(isDisabled ? styles.unactiveBtnText : null)
-            }}>Опублікувати</Text>
-        </Button>
+                ...(isDisabled ? styles.unactiveBtnText : null),
+              }}
+            >
+              Опублікувати
+            </Text>
+          </Button>
+        )}
+
+        {error && <Text style={styles.error}>{error}</Text>}
       </View>
-      
-      <View style={{
-        flexDirection: "column",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}>
-      <Button
-        buttonStyle={styles.deleteBtn}
-        onPress={onClearData}
+
+      <View
+        style={{
+          flexDirection: "column",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
       >
-        <TrashCan width={24} height={24} />
-      </Button>
+        <Button buttonStyle={styles.deleteBtn} onPress={onClearData}>
+          <TrashCan width={24} height={24} />
+        </Button>
       </View>
     </View>
   );
@@ -293,12 +337,12 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "100%",
-    borderRadius:0,
+    borderRadius: 0,
     borderTopWidth: 0,
     borderLeftWidth: 0,
     borderRightWidth: 0,
     backgroundColor: colors.white,
-    paddingLeft: 0, 
+    paddingLeft: 0,
   },
   deleteBtn: {
     display: "flex",
@@ -312,30 +356,35 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 8,
   },
   cameraContent: {
     flex: 1,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "transparent",
+    justifyContent: "center",
+    alignItems: "center",
   },
   message: {
-    textAlign: 'center',
+    textAlign: "center",
     paddingBottom: 10,
     fontSize: 16,
   },
   locationInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 0,
   },
   mapMarker: {
-    position: 'absolute',
+    position: "absolute",
     top: 10,
     left: 0,
     zIndex: 1000,
-  }
+  },
+  error: {
+    color: colors.red,
+    textAlign: "center",
+    fontSize: 16,
+  },
 });

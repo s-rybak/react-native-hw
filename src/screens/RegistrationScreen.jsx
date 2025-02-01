@@ -24,7 +24,7 @@ import CircleCrossSvg from "../../icons/CircleCrossSvg";
 
 import { useSelector, useDispatch } from "react-redux";
 import { selectIsLoading, selectError } from "../redux/user/userSelectors";
-import { registerUser } from "../redux/user/userOparations";
+import { registerUser } from "../redux/user/userOperations";
 import { resetError } from "../redux/user/userSlice";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");

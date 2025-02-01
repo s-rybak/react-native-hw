@@ -12,7 +12,7 @@ import ProfileScreen from "../screens/ProfileScreen";
 import CreatePostsScreen from "../screens/CreatePostsScreen";
 import LogoutButton from "../components/LogoutButton";
 import PostsScreen from "../screens/PostsScreen";
-import { logoutUser } from "../redux/user/userOparations";
+import { logoutUser } from "../redux/user/userOperations";
 import { selectIsLoading, selectError } from "../redux/user/userSelectors";
 const Tab = createBottomTabNavigator();
 
