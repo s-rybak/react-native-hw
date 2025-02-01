@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,8 +11,9 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from "react-native";
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from "expo-image-picker";
 
 import { colors } from "../../styles/global";
 
@@ -21,21 +22,34 @@ import Button from "../components/Button";
 import CirclePlusSvg from "../../icons/CirclePlusSvg";
 import CircleCrossSvg from "../../icons/CircleCrossSvg";
 
+import { useSelector, useDispatch } from "react-redux";
+import { selectIsLoading, selectError } from "../redux/user/userSelectors";
+import { registerUser } from "../redux/user/userOparations";
+import { resetError } from "../redux/user/userSlice";
+
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 
-const RegistrationScreen = ({  navigation }) => {
-  const [photo, setPhoto] = useState('');
-  const [login, setLogin] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const RegistrationScreen = ({ navigation }) => {
+  const [photo, setPhoto] = useState("");
+  const [login, setLogin] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(true);
+  const isLoading = useSelector(selectIsLoading);
+  const error = useSelector(selectError);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(resetError());
+  }, []);
 
   const handlePhotoUpload = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (status !== 'granted') {
-        alert('Необхідний дозвіл на доступ до галереї');
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== "granted") {
+        alert("Необхідний дозвіл на доступ до галереї");
         return;
       }
 
@@ -49,10 +63,9 @@ const RegistrationScreen = ({  navigation }) => {
       if (!result.canceled) {
         setPhoto(result.assets[0].uri);
       }
-
     } catch (error) {
-      console.log('Помилка при завантаженні фото:', error);
-      alert('Помилка при завантаженні фото');
+      console.log("Помилка при завантаженні фото:", error);
+      alert("Помилка при завантаженні фото");
     }
   };
 
@@ -69,40 +82,34 @@ const RegistrationScreen = ({  navigation }) => {
   };
 
   const handlePasswordChange = (value) => {
-    if(value.length < 20) {
+    if (value.length < 20) {
       setPassword(value);
     }
   };
 
   const showPassword = () => {
-    setIsPasswordVisible(prev => !prev)
+    setIsPasswordVisible((prev) => !prev);
   };
 
   const onRegister = async () => {
-    console.log('register');
+    console.log("register");
     console.log(login, email, password, photo);
-    navigation.navigate('Home');
+    dispatch(registerUser({ email, password, login }));
+    // navigation.navigate("Home");
   };
 
   const onSignUp = () => {
-    navigation.navigate('Login');
+    navigation.navigate("Login");
   };
-  
+
   const showButton = (
-    <TouchableOpacity
-      onPress={showPassword}
-    >
-      <Text style={[styles.baseText, styles.passwordButtonText]}>
-        Показати
-      </Text>
+    <TouchableOpacity onPress={showPassword}>
+      <Text style={[styles.baseText, styles.passwordButtonText]}>Показати</Text>
     </TouchableOpacity>
   );
 
   return (
-    <Pressable
-      style={{ flex: 1 }}
-      onPress={() => Keyboard.dismiss()}
-    >
+    <Pressable style={{ flex: 1 }} onPress={() => Keyboard.dismiss()}>
       <>
         <Image
           source={require("../../assets/background.png")}
@@ -112,27 +119,30 @@ const RegistrationScreen = ({  navigation }) => {
 
         <KeyboardAvoidingView
           style={styles.container}
-          behavior={Platform.OS == "ios" ? 'padding' : 'height'}
+          behavior={Platform.OS == "ios" ? "padding" : "height"}
         >
           <View style={styles.formContainer}>
-
             <View style={styles.photoContainer}>
+              {photo && (
+                <>
+                  <Image source={{ uri: photo }} style={styles.photo} />
+                  <Pressable
+                    onPress={handlePhotoRemove}
+                    style={styles.circlePlus}
+                  >
+                    <CircleCrossSvg />
+                  </Pressable>
+                </>
+              )}
 
-                {photo && (
-                    <>
-                    <Image source={{ uri: photo }} style={styles.photo} />
-                    <Pressable onPress={handlePhotoRemove} style={styles.circlePlus}>
-                        <CircleCrossSvg/>
-                    </Pressable>
-                    </>
-                )}
-
-                {!photo && (
-                    <Pressable onPress={handlePhotoUpload} style={styles.circlePlus}>
-                        <CirclePlusSvg/>
-                    </Pressable>
-                )}
-
+              {!photo && (
+                <Pressable
+                  onPress={handlePhotoUpload}
+                  style={styles.circlePlus}
+                >
+                  <CirclePlusSvg />
+                </Pressable>
+              )}
             </View>
 
             <Text style={styles.title}>Реєстрація</Text>
@@ -163,16 +173,25 @@ const RegistrationScreen = ({  navigation }) => {
             </View>
 
             <View style={[styles.innerContainer, styles.buttonContainer]}>
-              <Button onPress={onRegister}>
-                <Text style={[styles.baseText, styles.loginButtonText]}>
-                  Зареєструватися
-                </Text>
-              </Button>
+              {isLoading ? (
+                <ActivityIndicator size="large" />
+              ) : (
+                <Button onPress={onRegister}>
+                  <Text style={[styles.baseText, styles.loginButtonText]}>
+                    Зареєструватися
+                  </Text>
+                </Button>
+              )}
+
+              {error && <Text style={styles.errorText}>{error}</Text>}
 
               <View style={styles.signUpContainer}>
                 <Text style={[styles.baseText, styles.passwordButtonText]}>
-                  Вже є акаунт ?{' '}
-                  <TouchableWithoutFeedback style={styles.signUpTextHolder} onPress={onSignUp}>
+                  Вже є акаунт ?{" "}
+                  <TouchableWithoutFeedback
+                    style={styles.signUpTextHolder}
+                    onPress={onSignUp}
+                  >
                     <Text style={styles.signUpText}>Увійти</Text>
                   </TouchableWithoutFeedback>
                 </Text>
@@ -207,7 +226,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     height: "100%",
-    width: "100%"
+    width: "100%",
   },
   formContainer: {
     width: SCREEN_WIDTH,
@@ -273,5 +292,9 @@ const styles = StyleSheet.create({
     height: 120,
     width: 120,
     borderRadius: 16,
-  }
+  },
+  errorText: {
+    color: colors.red,
+    textAlign: "center",
+  },
 });

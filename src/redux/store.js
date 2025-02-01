@@ -16,7 +16,6 @@ import userReducer from "./user/userSlice";
 const userConfig = {
   key: "user",
   storage: AsyncStorage,
-  whitelist: ["email", "password"],
 };
 
 /**

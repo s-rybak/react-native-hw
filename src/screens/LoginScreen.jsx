@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,12 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from "react-native";
+import { useSelector, useDispatch } from "react-redux";
+import { selectIsLoading, selectError } from "../redux/user/userSelectors";
+import { loginUser } from "../redux/user/userOparations";
+import { resetError } from "../redux/user/userSlice";
 
 import { colors } from "../../styles/global";
 
@@ -20,50 +25,51 @@ import Button from "../components/Button";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 
-const LoginScreen = ({navigation  }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const LoginScreen = ({ navigation }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(true);
+  const dispatch = useDispatch();
+
+  const isLoading = useSelector(selectIsLoading);
+  const error = useSelector(selectError);
+
+  useEffect(() => {
+    dispatch(resetError());
+  }, []);
 
   const handleEmailChange = (value) => {
     setEmail(value);
   };
 
   const handlePasswordChange = (value) => {
-    if(value.length < 20) {
+    if (value.length < 20) {
       setPassword(value);
     }
   };
 
   const showPassword = () => {
-    setIsPasswordVisible(prev => !prev)
+    setIsPasswordVisible((prev) => !prev);
   };
 
   const onLogin = async () => {
-    console.log('login')
+    console.log("login");
     console.log(email, password);
-    navigation.navigate('Home');
+    dispatch(loginUser({ email, password }));
   };
 
   const onSignUp = () => {
-    navigation.navigate('Registration');
+    navigation.navigate("Registration");
   };
-  
+
   const showButton = (
-    <TouchableOpacity
-      onPress={showPassword}
-    >
-      <Text style={[styles.baseText, styles.passwordButtonText]}>
-        Показати
-      </Text>
+    <TouchableOpacity onPress={showPassword}>
+      <Text style={[styles.baseText, styles.passwordButtonText]}>Показати</Text>
     </TouchableOpacity>
   );
 
   return (
-    <Pressable
-      style={{ flex: 1 }}
-      onPress={() => Keyboard.dismiss()}
-    >
+    <Pressable style={{ flex: 1 }} onPress={() => Keyboard.dismiss()}>
       <>
         <Image
           source={require("../../assets/background.png")}
@@ -73,7 +79,7 @@ const LoginScreen = ({navigation  }) => {
 
         <KeyboardAvoidingView
           style={styles.container}
-          behavior={Platform.OS == "ios" ? 'padding' : 'height'}
+          behavior={Platform.OS == "ios" ? "padding" : "height"}
         >
           <View style={styles.formContainer}>
             <Text style={styles.title}>Увійти</Text>
@@ -97,11 +103,17 @@ const LoginScreen = ({navigation  }) => {
             </View>
 
             <View style={[styles.innerContainer, styles.buttonContainer]}>
-              <Button onPress={onLogin}>
-                <Text style={[styles.baseText, styles.loginButtonText]}>
-                  Увійти
-                </Text>
-              </Button>
+              {isLoading ? (
+                <ActivityIndicator size="large" />
+              ) : (
+                <Button onPress={onLogin}>
+                  <Text style={[styles.baseText, styles.loginButtonText]}>
+                    Увійти
+                  </Text>
+                </Button>
+              )}
+
+              {error && <Text style={styles.errorText}>{error}</Text>}
 
               <View style={styles.signUpContainer}>
                 <Text style={[styles.baseText, styles.passwordButtonText]}>
@@ -141,7 +153,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     height: "100%",
-    width: "100%"
+    width: "100%",
   },
   formContainer: {
     width: SCREEN_WIDTH,
@@ -181,5 +193,9 @@ const styles = StyleSheet.create({
   },
   signUpText: {
     textDecorationLine: "underline",
-  }
+  },
+  errorText: {
+    color: colors.red,
+    textAlign: "center",
+  },
 });
