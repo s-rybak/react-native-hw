@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,30 +9,104 @@ import {
   Keyboard,
   TouchableOpacity,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  loadPostById,
+  loadComments,
+  createComment,
+} from "../redux/post/postOperations";
+import {
+  selectPostById,
+  selectPostByIdLoading,
+  selectPostByIdError,
+  selectComments,
+  selectCommentCreate,
+} from "../redux/post/postSelectors";
+import { selectUser } from "../redux/user/userSelectors";
 import { colors } from "../../styles/global";
 import Comment from "../components/Comment";
 import Input from "../components/Input";
 import SendIcon from "../../icons/SendIcon";
-const CommentsScreen = ({ route }) => {
-  const post = route?.params?.post;
+import { v4 as uuidv4 } from "uuid";
 
-  const testComments = [
-    {
-      text: "Really love your most recent photo. I've been trying to capture the same thing for a few months and would love some tips!",
-      date: "09 червня, 2020 | 08:40",
-      avatar: require("../../assets/default-avatar.jpg"),
-    },
-    {
-      text: "A fast 50mm like f1.8 would help with the bokeh. I've been using primes as they tend to get a bit sharper images.",
-      date: "09 червня, 2020 | 09:14",
-      avatar: require("../../assets/default-avatar.jpg"),
-      align: "right",
-    },
-  ];
+const CommentsScreen = ({ route }) => {
+  const postId = route?.params?.postId;
+  const [comment, setComment] = useState("");
+  const dispatch = useDispatch();
+  const { user } = useSelector(selectUser);
+  const { post, isLoading, error } = useSelector(selectPostById);
+  const {
+    comments = [],
+    isLoading: commentsLoading,
+    error: commentsError,
+  } = useSelector(selectComments);
+  const {
+    lastComment,
+    isLoading: lastCommentLoading,
+    error: lastCommentError,
+  } = useSelector(selectCommentCreate);
+
+  useEffect(() => {
+    if (postId) {
+      dispatch(loadPostById(postId));
+    }
+  }, [postId]);
+
+  useEffect(() => {
+    if (postId) {
+      dispatch(loadComments(postId));
+    }
+  }, [postId]);
+
+  useEffect(() => {
+    if (lastComment) {
+      dispatch(loadComments(postId));
+    }
+  }, [lastComment]);
+
+  console.log("post", post);
+
+  if (isLoading) {
+    return (
+      <View style={styles.section}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={style.section}>
+        <Text>Error: {error}</Text>
+      </View>
+    );
+  }
+
+  const handleCommentSubmit = (text) => {
+    dispatch(
+      createComment({
+        id: uuidv4(),
+        comment,
+        postId,
+        userId: user.uid,
+        date: new Date().toISOString(),
+      })
+    );
+    setComment("");
+  };
+
+  const handleCommentChange = (text) => {
+    setComment(text);
+  };
 
   const SendBtn = () => (
-    <TouchableOpacity style={styles.sendBtn}>
+    <TouchableOpacity
+      onPress={handleCommentSubmit}
+      style={styles.sendBtn}
+      disabled={lastCommentLoading}
+    >
       <SendIcon />
     </TouchableOpacity>
   );
@@ -49,24 +123,35 @@ const CommentsScreen = ({ route }) => {
             <View style={styles.commentsContainer}>
               <FlatList
                 style={styles.commentsList}
-                data={testComments}
+                data={comments}
                 renderItem={({ item }) => (
                   <Comment
-                    text={item.text}
+                    text={item.comment}
                     date={item.date}
-                    avatar={item.avatar}
-                    align={item.align}
+                    avatar={require("../../assets/default-avatar.jpg")}
+                    align={item.userId === user.uid ? "right" : "left"}
                   />
                 )}
               />
+              {commentsLoading && <ActivityIndicator size="large" />}
+
+              {commentsError && <Text>Error: {commentsError}</Text>}
             </View>
           </View>
 
           <View style={styles.inputContainer}>
             <Input
               outerStyles={styles.input}
+              value={comment}
+              onTextChange={handleCommentChange}
               placeholder="Коментувати..."
-              rightButton={<SendBtn />}
+              rightButton={
+                lastCommentLoading ? (
+                  <ActivityIndicator size="small" />
+                ) : (
+                  <SendBtn />
+                )
+              }
             />
           </View>
         </View>
@@ -120,6 +205,11 @@ const styles = StyleSheet.create({
   },
   keyboardAvoidingView: {
     flex: 1,
+  },
+  section: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

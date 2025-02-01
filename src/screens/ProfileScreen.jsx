@@ -137,10 +137,10 @@ const RegistrationScreen = ({ navigation }) => {
                   title={item.title}
                   location={item.address}
                   onLocationPress={() =>
-                    navigation.navigate("MapScreen", { post: item })
+                    navigation.navigate("MapScreen", { postId: item.id })
                   }
                   onCommentsPress={() =>
-                    navigation.navigate("CommentsScreen", { post: item })
+                    navigation.navigate("CommentsScreen", { postId: item.id })
                   }
                 />
               )}

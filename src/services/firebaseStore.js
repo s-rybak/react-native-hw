@@ -65,6 +65,40 @@ export const getPosts = async (uid) => {
   }
 };
 
+export const getPostById = async (id) => {
+  const docRef = doc(db, "posts", id);
+  const docSnap = await getDoc(docRef);
+  return docSnap.data();
+};
+
+export const getCommentsByPostId = async (id) => {
+  const docRef = collection(db, "comments");
+  const q = query(docRef, where("postId", "==", id));
+  const docSnap = await getDocs(q);
+  if (docSnap.size > 0) {
+    const comments = [];
+    docSnap.forEach((doc) => {
+      comments.push(doc.data());
+    });
+    return comments;
+  }
+  return [];
+};
+
+export const addComment = async (comment) => {
+  try {
+    console.log("comment", comment);
+    await setDoc(doc(db, "comments", comment.id), comment, {
+      merge: true,
+    });
+    console.log("Comment added:", comment);
+    return comment;
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    throw error;
+  }
+};
+
 // Функція для запису даних користувача у Firestore
 export const updateUserInFirestore = async (uid, data) => {
   try {
